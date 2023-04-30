@@ -24,21 +24,10 @@ The script includes error handling to catch and log any exceptions that might oc
 Logging
 The script uses the Python logging module to write log messages to a file named scanner.log. The log file includes timestamps, log levels, and log messages.
 
-License
-This project is licensed under the MIT License. You are free to use, modify, and distribute this code as you see fit.
-
-Contributing
-Contributions to this project are welcome. If you find a bug or have a feature request, please open an issue or submit a pull request.
-
-Acknowledgments
-The pytesseract library used in this project is based on the Tesseract OCR engine, developed by Google.
-The requests library used in this project is developed and maintained by Kenneth Reitz and contributors.
-This README file provides clear instructions on how to install and use the tool, along with information on the database, error handling, and logging. It also includes licensing information and guidelines for contributing to the project.
 
 
 
-
-Image Duplicate Scanner
+**Image Duplicate Scanner**
 This script scans an API for duplicate images and stores information about them in a database table. The script uses a hashing algorithm to detect duplicate images, and can handle images in JPEG, PNG, and SVG formats.
 
 Getting Started
