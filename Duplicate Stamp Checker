@@ -1,0 +1,99 @@
+import requests
+import hashlib
+import sqlite3
+import logging
+import argparse
+from datetime import datetime
+from PIL import Image
+import io
+import xml.etree.ElementTree as ET
+
+# Define the API URL
+API_URL = "https://api.example.com/images"
+
+# Define the hashing algorithm to use
+HASH_ALGORITHM = hashlib.sha256
+
+# Define the name of the duplicates table
+DUPLICATES_TABLE_NAME = "duplicates"
+
+# Define the database file name
+DATABASE_FILE_NAME = "mydb.db"
+
+def main(api_url, database_file, hash_algorithm):
+    # Set up logging
+    logging.basicConfig(filename="scanner.log", level=logging.DEBUG, format="%(asctime)s %(levelname)s: %(message)s")
+
+    try:
+        # Connect to the database
+        conn = sqlite3.connect(database_file)
+        cursor = conn.cursor()
+
+        # Create the duplicates table if it doesn't exist
+        cursor.execute(f"CREATE TABLE IF NOT EXISTS {DUPLICATES_TABLE_NAME} (token TEXT, info TEXT, timestamp TEXT)")
+
+        # Connect to the API and retrieve the image data
+        response = requests.get(api_url)
+        response.raise_for_status()
+        image_data = response.content
+
+        # Detect the image format and convert to JPEG
+        image_format = detect_image_format(image_data)
+        if image_format == "SVG":
+            image_data = convert_svg_to_png(image_data)
+            image_format = "PNG"
+
+        # Calculate the hash of the image data
+        image_hash = hash_algorithm(image_data).hexdigest()
+
+        # Check if the hash already exists in the database
+        cursor.execute(f"SELECT * FROM {DUPLICATES_TABLE_NAME} WHERE token=?", (image_hash,))
+        if cursor.fetchone():
+            # Duplicate image found - insert into database
+            info = response.json()
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cursor.execute(f"INSERT INTO {DUPLICATES_TABLE_NAME} (token, info, timestamp) VALUES (?, ?, ?)", (image_hash, str(info), timestamp))
+            conn.commit()
+            logging.info("Duplicate image inserted into database")
+
+        # Close the database connection
+        conn.close()
+        logging.info("Database connection closed")
+
+    except Exception as e:
+        logging.exception("Error occurred: %s", str(e))
+        sys.exit(1)
+
+def detect_image_format(image_data):
+    """Detects the format of an image data stream."""
+    if image_data.startswith(b"\x89PNG"):
+        return "PNG"
+    elif image_data.startswith(b"\xff\xd8\xff"):
+        return "JPEG"
+    elif image_data.startswith(b"<?xml"):
+        return "SVG"
+    else:
+        raise ValueError("Unknown image format")
+
+def convert_svg_to_png(svg_data):
+    """Converts an SVG image to PNG format."""
+    root = ET.fromstring(svg_data)
+    width = root.attrib.get("width")
+    height = root.attrib.get("height")
+    if not width or not height:
+        raise ValueError("SVG image missing width or height attribute")
+    buffer = io.BytesIO()
+    cairosvg.svg2png(bytestring=svg_data, write_to=buffer, output_width=int(width), output_height=int(height))
+    return buffer.getvalue()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Scan an API for duplicate images and store them in a database.")
+    parser.add_argument("--api_url", help="The URL of the API to scan.", default=API_URL)
+    parser.add_argument("--database_file", help="The name of the database file.", default
+
+        DATABASE_FILE_NAME)
+    parser.add_argument("--hash_algorithm", help="The hashing algorithm to use.", default=HASH_ALGORITHM)
+    args = parser.parse_args()
+
+    # Call the main function with the command line arguments
+    main(args.api_url, args.database_file, getattr(hashlib, args.hash_algorithm))
