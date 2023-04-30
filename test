@@ -1,0 +1,57 @@
+import requests
+import pytesseract
+import re
+import sqlite3
+import logging
+import sys
+
+# Define the API URL
+api_url = "https://api.example.com/images"
+
+# Define the regular expression pattern to extract fields from the text
+pattern = r"p=(\d+\.\d+).*?op=(\d+\.\d+).*?tick=(\d+).*?amt=(\d+).*?limit=(\d+)"
+
+def main():
+    # Set up logging
+    logging.basicConfig(filename="scanner.log", level=logging.DEBUG, format="%(asctime)s %(levelname)s: %(message)s")
+
+    try:
+        # Connect to the database
+        conn = sqlite3.connect("mydb.db")
+        cursor = conn.cursor()
+
+        # Create the table if it doesn't exist
+        cursor.execute("CREATE TABLE IF NOT EXISTS mytable (p REAL, op REAL, tick INTEGER, amt INTEGER, limit INTEGER)")
+
+        # Connect to the API and retrieve the image data
+        response = requests.get(api_url)
+        response.raise_for_status()
+        image_data = response.content
+
+        # Extract text from the image using OCR
+        text = pytesseract.image_to_string(image_data)
+
+        # Extract fields from the text using regular expressions
+        match = re.search(pattern, text)
+        if match:
+            p = match.group(1)
+            op = match.group(2)
+            tick = match.group(3)
+            amt = match.group(4)
+            limit = match.group(5)
+
+            # Insert the data into the database
+            cursor.execute("INSERT INTO mytable (p, op, tick, amt, limit) VALUES (?, ?, ?, ?, ?)", (p, op, tick, amt, limit))
+            conn.commit()
+            logging.info("Data inserted into database")
+
+        # Close the database connection
+        conn.close()
+        logging.info("Database connection closed")
+
+    except Exception as e:
+        logging.exception("Error occurred: %s", str(e))
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
