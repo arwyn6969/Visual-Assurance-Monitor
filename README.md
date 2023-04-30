@@ -34,3 +34,48 @@ Acknowledgments
 The pytesseract library used in this project is based on the Tesseract OCR engine, developed by Google.
 The requests library used in this project is developed and maintained by Kenneth Reitz and contributors.
 This README file provides clear instructions on how to install and use the tool, along with information on the database, error handling, and logging. It also includes licensing information and guidelines for contributing to the project.
+
+
+
+
+Image Duplicate Scanner
+This script scans an API for duplicate images and stores information about them in a database table. The script uses a hashing algorithm to detect duplicate images, and can handle images in JPEG, PNG, and SVG formats.
+
+Getting Started
+To use this script, you'll need to install Python 3.x and the required dependencies listed in requirements.txt. You can install the dependencies by running:
+
+Copy code
+pip install -r requirements.txt
+Once you have the dependencies installed, you can run the script with the following command:
+
+css
+Copy code
+python scanner.py --api_url <API_URL> --database_file <DATABASE_FILE> --hash_algorithm <HASH_ALGORITHM>
+Replace <API_URL> with the URL of the API to scan, <DATABASE_FILE> with the name of the database file to use, and <HASH_ALGORITHM> with the hashing algorithm to use (e.g. sha256).
+
+Configuration
+You can configure the script by modifying the following constants in scanner.py:
+
+API_URL: The URL of the API to scan.
+HASH_ALGORITHM: The hashing algorithm to use.
+DUPLICATES_TABLE_NAME: The name of the database table to use for storing information about duplicate images.
+DATABASE_FILE_NAME: The name of the database file to use.
+You can also modify the detect_image_format() and convert_svg_to_png() functions to support additional image formats or to modify the SVG conversion process.
+
+Database Schema
+The script creates a database table called duplicates with the following schema:
+
+Column	Type	Description
+token	TEXT	The hash value of the image data.
+info	TEXT	The response data from the API for the image.
+timestamp	TEXT	The timestamp when the image was detected as a duplicate.
+License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+Acknowledgments
+This script was inspired by this Stack Overflow answer and uses the following third-party libraries:
+
+requests for making HTTP requests.
+Pillow for image manipulation.
+xml.etree.ElementTree for parsing SVG images.
+CairoSVG for converting SVG images to PNG.
